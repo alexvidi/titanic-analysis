@@ -181,7 +181,7 @@ mean(dataset$Fare, na.rm = TRUE)
 Imputem el el valor obtingut al valor perdut de la columna "fare"
 
 ```{r replace}
-dataset$Fare[c(1044, 1014)] <- 33.29548
+dataset$Fare[c(1044)] <- 33.29548
 ```
 
 Observem que ja no tenim valors perduts en cap registre
