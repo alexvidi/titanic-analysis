@@ -70,6 +70,7 @@ Per altra banda la implementació de un model d'interès sobre quines han sigut 
 
 ```{r message= FALSE, warning=FALSE}
 
+# Placeholder
 
 ```
 
@@ -78,9 +79,19 @@ Per altra banda la implementació de un model d'interès sobre quines han sigut 
 
 ## Valors buits (missing values).
 
+```{r message= FALSE, warning=FALSE}
+
+# Placeholder
+
+```
 
 ## Valors extrems (outliers).
 
+```{r message= FALSE, warning=FALSE}
+
+# Placeholder
+
+```
 
 ## Altres accions per a la neteja del joc de dades.
 
@@ -92,7 +103,6 @@ Primerament, observem que la primera variable "PassengerId" no és res més que 
 dataset <- dataset[,-1]
 
 ```
-
 
 Observem que les variables 'Survived' i 'Pclass' són de tipus enter, però la seva funció es indicar una categoria. Per tant, procedim a convertir-les en tipu factor.
 
@@ -113,12 +123,36 @@ class(dataset$Pclass)
 
 ## Selecció de grups a analitzar/comparar.
 
+```{r message= FALSE, warning=FALSE}
+
+# Placeholder
+
+```
+
 ## Normalitat i homogeneïtat de la variància.
+
+```{r message= FALSE, warning=FALSE}
+
+# Placeholder
+
+```
 
 ## Aplicació de proves estadístiques per a la comparació de grups.
 
+```{r message= FALSE, warning=FALSE}
+
+# Placeholder
+
+```
+
 
 # Representació de resultats (taules i gràfiques).
+
+```{r message= FALSE, warning=FALSE}
+
+# Placeholder
+
+```
 
 
 # Conclusions.
