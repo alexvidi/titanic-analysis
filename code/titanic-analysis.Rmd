@@ -47,8 +47,37 @@ Lectura del fitxer.
 
 ```{r message= FALSE, warning=FALSE}
 
-dataset <- read.csv("../data/input/train.csv")
+# Carreguem els fitxers 'test.cvs' i 'train.csv' de la carpeta 'data/input' (indicant que volem els 'strings' com 'factors')
+test_dataset <- read.csv("../data/input/test.csv", stringsAsFactors=TRUE)
+train_dataset <- read.csv("../data/input/train.csv", stringsAsFactors=TRUE)
+
+# Mostrem les primeres files dels jocs de dades
+head(test_dataset)
+head(train_dataset)
+
+# Creem una nova columna amb el nom del dataset del qual provenen les files
+test_dataset['row_type'] <- as.factor('test')
+train_dataset['row_type'] <- as.factor('train')
+
+# Creem la columna 'Survived' ja que el joc de dades de test no la conté (introduïrem un valor dummy que després eliminarem)
+test_dataset['Survived'] <- 99
+
+# Juntem els dos jocs de dades en un únic dataset per poder netejar els dos a la vegada
+dataset <- rbind(train_dataset, test_dataset[,colnames(train_dataset)])
+
+# Mostrem les primeres files del dataset unificat
+head(dataset)
+
+# Mostrem l'estructura del dataset
 str(dataset)
+
+# Mostrem un resum de les estadistiques de les columnes del dataset
+summary(dataset)
+
+# Mostrem el número de files del joc de dades unificat i per separat
+dim(dataset)[1]
+dim(dataset[dataset$row_type=='test',])[1]
+dim(dataset[dataset$row_type=='train',])[1]
 
 ```
 
@@ -100,7 +129,7 @@ Primerament, observem que la primera variable "PassengerId" no és res més que 
 ```{r message= FALSE, warning=FALSE}
 
 # eliminació de la primera columna PassengerId
-dataset <- dataset[,-1]
+# dataset <- dataset[,-1]
 
 ```
 
@@ -110,11 +139,11 @@ Observem que les variables 'Survived' i 'Pclass' són de tipus enter, però la s
 
 # transformació de les variables 
 
-dataset$Survived <- as.factor(dataset$Survived)
-class(dataset$Survived)
+# dataset$Survived <- as.factor(dataset$Survived)
+# class(dataset$Survived)
 
-dataset$Pclass <- as.factor(dataset$Pclass)
-class(dataset$Pclass)
+# dataset$Pclass <- as.factor(dataset$Pclass)
+# class(dataset$Pclass)
 
 ```
 
