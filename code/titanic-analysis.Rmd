@@ -47,7 +47,7 @@ Lectura del fitxer.
 
 ```{r message= FALSE, warning=FALSE}
 
-# Carreguem els fitxers 'test.cvs' i 'train.csv' de la carpeta 'data/input' (indicant que volem els 'strings' com 'factors')
+# Carreguem els fitxers 'test.csv' i 'train.csv' de la carpeta 'data/input' (indicant que volem els 'strings' com 'factors')
 test_dataset <- read.csv("../data/input/test.csv", stringsAsFactors=TRUE)
 train_dataset <- read.csv("../data/input/train.csv", stringsAsFactors=TRUE)
 
@@ -99,7 +99,7 @@ Per altra banda la implementació de un model d'interès sobre quines han sigut 
 
 ```{r message= FALSE, warning=FALSE}
 
-# Placeholder
+View(dataset)
 
 ```
 
@@ -108,11 +108,90 @@ Per altra banda la implementació de un model d'interès sobre quines han sigut 
 
 ## Valors buits (missing values).
 
+Ajust de les dades amb valors nuls o perduts
+
 ```{r message= FALSE, warning=FALSE}
+# transformació de les variables 
 
-# Placeholder
-
+apply(dataset=="",2, sum)
+apply(is.na(dataset),2, sum)
 ```
+Observem que les variables amb valors són Age, Cabin i Embarked
+
+Ajust del la variable Age
+
+```{r message= FALSE, warning=FALSE}
+library(mice)
+dataset <- as.data.frame(dataset)
+#imputem els valors de edat que falten amb el paquet MICE
+impute <- mice(dataset[, !names(dataset) %in% c('PassengerId','Name','Ticket','Cabin','Survived','Assigned','FL','FT','ticketlength','one','two','three','four','five','six','seven')], rfPackage = "randomForest")
+trained_mouse <- complete(impute)
+```
+
+```{r pplot, echo = FALSE, warning = FALSE}
+#creem histogramas per observar si els valors imputats a la variable Age mostren gaire diferència
+
+library("ggplot2")
+ap <- ggplot(dataset, aes(x=Age))+geom_density(adjust=.5)+labs(title="Original Data")
+ap
+mp <- ggplot(trained_mouse, aes(x=Age))+geom_density(adjust=.5)+labs(title="Imputed Data")
+mp
+```
+Observem que els dos gràfics són reonablament semblants, pertant procedim a reempleçar les dades dels valors imputats als originals
+
+```{r message= FALSE, warning=FALSE}
+dataset$Age <- trained_mouse$Age
+```
+
+
+Ajustem els valors perduts de la variable Embarked
+
+Com hem vist anteriorment hi ha dos valors de la variable Embarked que falten. Procedim a verificar amb el valor de la variable Cabin. A partir de les dades, totes les cabines que comencen amb B es van embarcar des de Southampton o Charbourg.
+
+```{r message= FALSE, warning=FALSE}
+unique(dataset[grep("*^B", dataset$Cabin),]$Embarked)
+```
+Els bitllets de viatge de tipus B costen al voltant de 80 USD, que és molt similar a la tarifa mitja o mitjana dels passatgers S.
+
+```{r cab, echo = FALSE, message=FALSE}
+library(magrittr)
+library(dplyr)
+
+dataset[grep("*^B", dataset$Cabin),] %>% group_by(Embarked) %>% summarize_each(funs(mean),Fare)
+dataset[grep("*^B", dataset$Cabin),] %>% group_by(Embarked) %>% summarize_each(funs(median),Fare)
+```
+
+Per tant, procedim a imputar els dos valors perduts de "Embarked" com a tipus S
+
+```{r replace}
+dataset$Embarked[c(62, 830)] <- 'S'
+```
+
+
+Busquem  on està localitzat el valor perdut de la variable "Fare"
+
+```{r replace}
+which(is.na(dataset$Fare))
+```
+Trobem la mitjana del total dels tiquets excloent el valor perdut
+
+```{r replace}
+mean(dataset$Fare, na.rm = TRUE)
+```
+Imputem el el valor obtingut al valor perdut de la columna "fare"
+
+```{r replace}
+dataset$Fare[c(1044, 1014)] <- 33.29548
+```
+
+Observem que ja no tenim valors perduts en cap registre
+
+```{r message= FALSE, warning=FALSE}
+# transformació de les variables 
+
+apply(is.na(dataset),2, sum)
+```
+
 
 ## Valors extrems (outliers).
 
@@ -129,7 +208,7 @@ Primerament, observem que la primera variable "PassengerId" no és res més que 
 ```{r message= FALSE, warning=FALSE}
 
 # eliminació de la primera columna PassengerId
-# dataset <- dataset[,-1]
+dataset <- dataset[,-1]
 
 ```
 
@@ -139,11 +218,11 @@ Observem que les variables 'Survived' i 'Pclass' són de tipus enter, però la s
 
 # transformació de les variables 
 
-# dataset$Survived <- as.factor(dataset$Survived)
-# class(dataset$Survived)
+dataset$Survived <- as.factor(dataset$Survived)
+class(dataset$Survived)
 
-# dataset$Pclass <- as.factor(dataset$Pclass)
-# class(dataset$Pclass)
+dataset$Pclass <- as.factor(dataset$Pclass)
+class(dataset$Pclass)
 
 ```
 
