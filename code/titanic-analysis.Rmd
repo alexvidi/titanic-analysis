@@ -13,7 +13,7 @@ output:
     number_sections: yes
     theme: cosmo
     toc: yes
-    toc_depth: 2
+    toc_depth: 3
   word_document: default
 ---
 
@@ -21,16 +21,28 @@ output:
 knitr::opts_chunk$set(eval=T, echo=T)
 ```
 
+# Càrrega de llibreries.
+
+En aquesta secció, carregarem les llibreries que s'utilitzaran durant la realització d'aquesta pràctica.
+
+```{r message= FALSE, warning=FALSE}
+
+library(mice)
+library(ggplot2)
+library(magrittr)
+library(dplyr)
+
+```
 
 # Descripció i càrrega del dataset.
 
-El conjunt de dades train.csv s'ha obtingut del web https://www.kaggle.com/c/titanic.
+Els conjunts de dades train.csv i 'test.csv' que es troben a la carpeta 'data/input' d'aquest paquet s'han obtingut del web https://www.kaggle.com/c/titanic.
 
-Aquest conjunt de dades conté informació sobre la tripulació del Titanic amb 12 tipus de variables i un total de 891 registres ( passatgers).
+Aquests conjunts de dades contenen informació sobre la tripulació del Titanic amb 12 (11 el de test) columnes i un total de 891 registres (418 el de test).
 
 Les variables d’aquesta mostra son:
 
-- PassengerId: Numero de passatger.
+- PassengerId: Número de passatger.
 - Survived: Supervivència (0=No, 1=Si).
 - Pclass: Classe de tiquet (1=Primera, 2=Segona, 3=Tercera) .
 - Name: Nom.
@@ -43,7 +55,7 @@ Les variables d’aquesta mostra son:
 - Cabin: Numero de cabina.
 - Embarked: Port de embarcament.
 
-Lectura del fitxer.
+A continuació, passem a carregar el fitxer i a mostrar una sèrie de metadades del conjunt que ens donaran una primer idea del joc de dades amb el que estem tractant.
 
 ```{r message= FALSE, warning=FALSE}
 
@@ -87,11 +99,10 @@ Observem que que el dataset conté 3 tipus de variables del quals caràcter, num
 
 
 El procés d'integració i selecció de les dades es realitzarà al llarg del procés de neteja
-i anàlisi de les diverses variables del conjunt de dades d'entrenament del dataset.
+i anàlisi de les diverses variables del conjunt de dades d'entrenament del dataset (on la columna 'row_type' és igual a 'train').
 
 En aquest procés es pretén anar analitzant les diferents variables en el procés de neteja i anàlisi, i en
-funció de les característiques que es vagin observant de les diverses variables es prendrà la decisió d'utilitzar un conjunt
-seleccionat el qual pugui ser útil per a la predicció del model i la comprovació amb el conjunt de test o validació.
+funció de les característiques que es vagin observant de les diverses variables es prendrà la decisió d'utilitzar un conjunt seleccionat el qual pugui ser útil per a la predicció del model i la comprovació amb el conjunt de test o validació.
 
 El resultat del projecte pot respondre a possibles causes de mort dels tripulants que no van sobreviure a la tragèdia del Titanic, permetent
 establir models d'inferència sobre les causes relatives a la mortalitat entre diversos tipus de passatgers.
@@ -99,7 +110,8 @@ Per altra banda la implementació de un model d'interès sobre quines han sigut 
 
 ```{r message= FALSE, warning=FALSE}
 
-View(dataset)
+# Mostrem un subconjunt de dades 
+head(dataset)
 
 ```
 
@@ -108,96 +120,217 @@ View(dataset)
 
 ## Valors buits (missing values).
 
-Ajust de les dades amb valors nuls o perduts
+En aquesta secció, farem un petit anàlisi sobre l'existència de valors buits o valors no informats en el nostre joc de dades. A partir de l'identificació de columnes amb valors buits, aplicarem diverses tècniques per inputar valors en els registres que contenen columnes amb aquestes característiques.
+
+### Identificació de les columnes amb valors buits.
+
+En aquesta secció identificarem les columnes que contenen aquest tipus de valors.
 
 ```{r message= FALSE, warning=FALSE}
-# transformació de les variables 
 
+# Mostrem el número de registres buits per cada columna 
 apply(dataset=="",2, sum)
 apply(is.na(dataset),2, sum)
-```
-Observem que les variables amb valors són Age, Cabin i Embarked
 
-Ajust del la variable Age
+```
+
+En els resultats anteriors podem observar que les variables amb valors buits són **Age**, **Cabin** i **Embarked**.
+
+### Ajust de la variable 'Age'.
+
+En aquesta secció tractem la columna 'Age' amb l'objectiu de inputar nous valors que en aquells registres on el seu valor és buit o no informat.
 
 ```{r message= FALSE, warning=FALSE}
-library(mice)
+
+# Transformem la variable 'dataset' a data.frame.
 dataset <- as.data.frame(dataset)
-#imputem els valors de edat que falten amb el paquet MICE
-impute <- mice(dataset[, !names(dataset) %in% c('PassengerId','Name','Ticket','Cabin','Survived','Assigned','FL','FT','ticketlength','one','two','three','four','five','six','seven')], rfPackage = "randomForest")
-trained_mouse <- complete(impute)
+
+# Inputem els valors d'edat que falten amb l'ajuda del paquet MICE
+input <- mice(
+  dataset[, !names(dataset) %in%
+            c('PassengerId','Name','Ticket','Cabin','Survived'
+              ,'Assigned','FL','FT','ticketlength','one','two'
+              ,'three','four','five','six','seven')], rfPackage = "randomForest")
+trained_mouse <- complete(input)
+
 ```
+
+A continuació, crearem dos histogrames amb la finalitat de comprovar que els valors generats per el paquet 'mice' no degraden la qualitat del nostre joc de dades.
 
 ```{r pplot, echo = FALSE, warning = FALSE}
-#creem histogramas per observar si els valors imputats a la variable Age mostren gaire diferència
 
-library("ggplot2")
-ap <- ggplot(dataset, aes(x=Age))+geom_density(adjust=.5)+labs(title="Original Data")
-ap
-mp <- ggplot(trained_mouse, aes(x=Age))+geom_density(adjust=.5)+labs(title="Imputed Data")
-mp
+# Creem histogramas per observar si els valors imputats a la variable 'Age' mostren gaire diferència
+ggplot(dataset, aes(x=Age))+geom_density(adjust=.5)+labs(title="Original Data")
+ggplot(trained_mouse, aes(x=Age))+geom_density(adjust=.5)+labs(title="Inputed Data")
+
 ```
-Observem que els dos gràfics són reonablament semblants, pertant procedim a reempleçar les dades dels valors imputats als originals
+
+Observem que els dos gràfics són raonablement semblants, per tant procedim a reemplaçar les dades dels valors inputats als originals.
 
 ```{r message= FALSE, warning=FALSE}
+
+# Insertem a la columna 'Age' del dataset original la nova columna calculada amb la lliberia 'mice'
 dataset$Age <- trained_mouse$Age
+
 ```
 
+### Ajust de la variable 'Embarked'.
 
-Ajustem els valors perduts de la variable Embarked
+Com hem vist anteriorment, hi ha dos valors de la variable **Embarked** que falten. Per trobar el valor d'aquestes dues observacions, procedim a verificar-ho amb l'ajuda dels valors de la variable **Cabin**.
 
-Com hem vist anteriorment hi ha dos valors de la variable Embarked que falten. Procedim a verificar amb el valor de la variable Cabin. A partir de les dades, totes les cabines que comencen amb B es van embarcar des de Southampton o Charbourg.
+A partir de les dades, podem comprobar que totes les cabines que comencen amb **B** es van embarcar des de les ciutats de Southampton o Charbourg.
 
 ```{r message= FALSE, warning=FALSE}
+
+# Mostrem els valors únics de la variable 'Embark' quan el nom de la cabina comença per 'B'
 unique(dataset[grep("*^B", dataset$Cabin),]$Embarked)
+
 ```
-Els bitllets de viatge de tipus B costen al voltant de 80 USD, que és molt similar a la tarifa mitja o mitjana dels passatgers S.
+A més a més, podem veure que els bitllets de viatge de tipus **B** costen al voltant de 80 USD, que és molt similar a la tarifa mitja o mitjana dels passatgers **S**.
 
-```{r cab, echo = FALSE, message=FALSE}
-library(magrittr)
-library(dplyr)
+```{r message= FALSE, warning=FALSE}
 
+# Calcul de la mitja i la mitjana de les cabines que comencen per 'B' (agrupat pels valors de la variable 'Embark')
 dataset[grep("*^B", dataset$Cabin),] %>% group_by(Embarked) %>% summarize_each(funs(mean),Fare)
 dataset[grep("*^B", dataset$Cabin),] %>% group_by(Embarked) %>% summarize_each(funs(median),Fare)
+
 ```
 
-Per tant, procedim a imputar els dos valors perduts de "Embarked" com a tipus S
-
-```{r replace}
-dataset$Embarked[c(62, 830)] <- 'S'
-```
-
-
-Busquem  on està localitzat el valor perdut de la variable "Fare"
-
-```{r replace}
-which(is.na(dataset$Fare))
-```
-Trobem la mitjana del total dels tiquets excloent el valor perdut
-
-```{r replace}
-mean(dataset$Fare, na.rm = TRUE)
-```
-Imputem el el valor obtingut al valor perdut de la columna "fare"
-
-```{r replace}
-dataset$Fare[c(1044)] <- 33.29548
-```
-
-Observem que ja no tenim valors perduts en cap registre
+Per tant, procedim a inputar els dos valors perduts de **Embarked** com a tipus **S**.
 
 ```{r message= FALSE, warning=FALSE}
-# transformació de les variables 
 
+# Inputem el valor 'S' en les dues observacions amb valors buits
+dataset$Embarked[c(62, 830)] <- 'S'
+
+```
+
+### Ajust de la variable 'Fare'.
+
+En aquest cas, com només es tracta d'un registre que no conté la dada, el que farem serà introduïr la mitjana de la resta de valors d'aquesta columna. Aquesta tècnica d'inputació de dades és molt freqüent quan la quantitat de valors no informats és petita i quan l'atribut és del tipus numèric. 
+
+Primer de tot, busquem on està localitzat el valor perdut de la variable **Fare**.
+
+```{r message= FALSE, warning=FALSE}
+
+# Trobem quina és la posició de l'observació que conté el valor buit/NULL
+which(is.na(dataset$Fare))
+
+```
+
+A continuació, trobem la mitjana del total dels tiquets excloent el valor perdut.
+
+```{r message= FALSE, warning=FALSE}
+
+# Calculem la mitjana dels valors de la columna 'Fare' eliminant el registre amb valor buit
+mean_fare <- mean(dataset$Fare, na.rm = TRUE)
+
+```
+
+Per últim, inputem el el valor obtingut al valor perdut de la columna **Fare**.
+
+```{r message= FALSE, warning=FALSE}
+
+# Definim el valor de l'observació número '1044' amb el valor de la mitjana abans calculat
+dataset$Fare[c(1044)] <- mean_fare
+
+```
+
+### Comprovació de valors buits.
+
+Com podem observar en el càlcul que computarem a continuació, la quantitat de valors no informats després del tractament és de zero observacions.
+
+```{r message= FALSE, warning=FALSE}
+
+# Mostrem el número de registres buits per cada columna 
+apply(dataset=="",2, sum)
 apply(is.na(dataset),2, sum)
+
 ```
 
 
 ## Valors extrems (outliers).
 
+L'estudi de valors extrem el farem només en les variables del tipus quantitatiu. Això és així ja que, per les variables del tipus qualitatiu, és molt difícil saber que vol dir que un valor esta fora del que es considera 'normal' (o similar a la resta).
+
+### Identificació de les columnes amb valors extrems
+
+A continuació, passem a mostrar una sèrie de gràfiques i taules d'estadístiques que ens ajudaran a identificar aquells atributs amb valors extrems.
+
 ```{r message= FALSE, warning=FALSE}
 
-# Placeholder
+# Mostrem l'histograma i un resum de la variable 'Survived'
+hist(dataset$Survived, col = "blue")
+summary(dataset$Survived)
+table(dataset$Survived)
+
+# Mostrem l'histograma i un resum de la variable 'Survived'
+hist(dataset$Pclass, col = "blue")
+summary(dataset$Pclass)
+table(dataset$Pclass)
+
+# Mostrem l'histograma i un resum de la variable 'Age'
+hist(dataset$Age, col = "blue")
+summary(dataset$Age)
+
+# Mostrem l'histograma i un resum de la variable 'SibSp'
+hist(dataset$SibSp, col = "blue")
+summary(dataset$SibSp)
+table(dataset$SibSp)
+
+# Mostrem l'histograma i un resum de la variable 'Parch'
+hist(dataset$Parch, col = "blue")
+summary(dataset$Parch)
+table(dataset$Parch)
+
+# Mostrem l'histograma i un resum de la variable 'Fare'
+hist(dataset$Fare, col = "blue")
+summary(dataset$Fare)
+
+```
+
+D'aquesta informació, observem el següent:
+
+- **Survived**: Tots els valors són o bé 0 o bé 1. Els valors 99 són els que hem inputat nosaltres quan hem fet el *merge* del joc de dades de 'test' amb el de 'train'. No hi ha cap fora dels valors esperats i, per tant, no eliminarem cap registre en base a aquest atribut.
+
+- **Pclass**: Tots els valors són o bé 1 o bé 2 o bé 3. Les diferents classes de tiquet. No hi ha cap fora dels valors esperats i, per tant, no eliminarem cap registre en base a aquest atribut.
+
+- **Age**: El mínim és 0.17 i el màxim és 80. No hi ha cap edat que cridi l'atenció com per considerar-la fora de l'esperat i eliminar-la del joc de dades.
+
+- **SibSp**: Gran part dels valors són enters entre 0 i 1. Hi ha un 9 observacions amb un valor allunyat de la resta com és el valor 8. Tot i això, és un valor que seria possible ja que existeixen families numerosas amb aquesta quantitat de fills. En el nostre cas, no eliminarem aquestes observacions ja que no les considerem extremes (tot i que sí poc probables).
+
+- **Parch**: Gran part dels valors són enters entre 0 i 1. Hi ha 2 observacions amb un valor allunyat de la resta com és el valor 9. Tot i això, és un valor que seria possible ja que existeixen families numerosas amb aquesta quantitat de fills. En el nostre cas, no eliminarem aquestes observacions ja que no les considerem extremes (tot i que sí poc probables).
+
+- **Fare**: Existeixen 4 observacions amb un valor extremadament allunyat de la resta. Aquest valor és el valor 512.329 que és el màxim de la variable. Com hem pogut observar al resum d'estadístiques, la mitjana dels valors d'aquesta columna és 33.295, és a dir, es troba molt lluny de la tendència de valors (també de la mediana i dels quartils). És per aquest motiu que eliminarem aquesta observació i recalcularem la mitjana per introduïrla en els valors que originalment eren buits (ja que abans ho haviem fet amb una mitjana esbiaixada).
+
+Cal apuntar que tot i que hi hagi d'altres valors de la variable **Fare** que semblin extrems, creiem que es poden arribar a donar i és per aquest motiu que els mantindrem.
+
+### Ajust de la variable 'Fare'
+
+A continuació eliminarem el registre que conté el valor extrem en la variable **Fare** i recalcularem la mitjana per introduïrla en els valors que originalment eren buits (ja que abans ho haviem fet amb una mitjana esbiaixada).
+
+```{r message= FALSE, warning=FALSE}
+
+# Calculem el màxim de la variable 'Fare'
+max_fare <- max(dataset$Fare)
+
+# Mostrem les dimensions del 'dataset' abans d'eliminar les observacions
+dim(dataset)
+
+# Eliminem els registres on el valor és igual al màxim 
+dataset <- dataset[dataset$Fare != max_fare,]
+
+# Mostrem les dimensions del 'dataset' després d'eliminar les observacions
+dim(dataset)
+
+# Calculem el màxim de la variable 'Fare'
+max(dataset$Fare)
+
+# Calculem la mitjana de la variable 'Fare'
+mean_fare <- mean(dataset$Fare)
+
+# Introduïm el nou valor en l'observació que originalment era buida (l'observació 1044)
+dataset$Fare[c(1044)] <- mean_fare
 
 ```
 
@@ -208,6 +341,7 @@ Primerament, observem que la primera variable "PassengerId" no és res més que 
 ```{r message= FALSE, warning=FALSE}
 
 # eliminació de la primera columna PassengerId
+dim(unique(dataset$PassengerId))
 dataset <- dataset[,-1]
 
 ```
