@@ -365,10 +365,28 @@ class(dataset$Pclass)
 
 ## Selecció de grups a analitzar/comparar.
 
+Per a aquest estudi, treballem amb només quatre variables d'entrada i una variable de resposta.
+Les quatre variables d'entrada són Class, Sex, Age i Embarked.
+La variable de resposta és si van sobreviure o no.
+
+Convertim la variable Age en categòrica de la següent manera:
+• Si age <= 18, llavors age = child
+• Si 18 < age <= 60, llavors age = adult
+• Si age > 60, llavors age = senior
+
 ```{r message= FALSE, warning=FALSE}
 
-# Placeholder
+# Selecció dels grups a analitzar
+df = dataset[,c(1,2,4,5,11)]
 
+# Categorització variable age
+df$Age[df$Age <= 18] = "child"
+df$Age[(df$Age > 18) & (df$Age <= 60) & (df$Age != "child")] = "adult"
+df$Age[(df$Age != "child") & (df$Age != "adult")] = "senior"
+df$Age = as.factor(df$Age)
+
+# resum selecció de dades
+summary(df)
 ```
 
 ## Normalitat i homogeneïtat de la variància.
@@ -382,10 +400,85 @@ class(dataset$Pclass)
 ## Aplicació de proves estadístiques per a la comparació de grups.
 
 ```{r message= FALSE, warning=FALSE}
+# Abans de executar les proves convertim el datafrem categoric en numèric
+df$Pclass = as.integer(df$Pclass)
+df$Sex = as.integer(df$Sex)
+df$Age = as.integer(df$Age)
+df$Embarked = as.integer(df$Embarked)
+df$Survived = as.integer(df$Survived)
+head(df)
 
-# Placeholder
+# Analisi de l'efecte entre Pclass i supervivència
+
+me_pclass = c(0,0,0)
+me_pclass[1] = mean(df$Survived[df$Pclass==1])
+me_pclass[2] = mean(df$Survived[df$Pclass==2])
+me_pclass[3] = mean(df$Survived[df$Pclass==3])
+plot(me_pclass, type="o", main="Efecte principal de Passenger Class", xlab="Passenger Class", ylab="Efecte principal",
+     xaxt="n")
+axis(1, at=c(1,2,3), labels=c("1er", "2nd", "3er"))
+
+# Analisi de l'efecte entre sex i supervivència
+
+me_sex = c(0,0)
+me_sex[1] = mean(df$Survived[df$Sex==1])
+me_sex[2] = mean(df$Survived[df$Sex==2])
+plot(me_sex, type="o", main="Efecte principal de Sex", xlab="Sex", ylab="Efecte principal", xaxt="n")
+axis(1, at=c(1,2), labels=c("Dona", "Home"))
+
+# Analisi de l'efecte entre age i supervivència
+
+me_age = c(0,0,0)
+me_age[1] = mean(df$Survived[df$Age==1])
+me_age[2] = mean(df$Survived[df$Age==2])
+me_age[3] = mean(df$Survived[df$Age==3])
+plot(me_age, type="o", main="Efecte principal de Age", xlab="Age", ylab="Efecte principal", xaxt="n")
+axis(1, at=c(1,2,3), labels=c("Adult", "Children", "Senior"))
+
+# Analisi de l'efecte entre Embarked i supervivència
+
+me_emb = c(0,0,0)
+me_emb[1] = mean(df$Survived[df$Embarked==1])
+me_emb[2] = mean(df$Survived[df$Embarked==2])
+me_emb[3] = mean(df$Survived[df$Embarked==3])
+plot(me_emb, type="o", main="Efecte principal de Port of Embarkment", xlab="Port of Embarkment", ylab="Efecte principal",
+     xaxt="n")
+axis(1, at=c(1,2,3), labels=c("Cherbourg", "Queenstown", "Southampton"))
 
 ```
+Com s'observa en els gràfics anteriors podem afirmar que de mitjana els passatgers de 1 era classe, dones, nens i que embarcaven a Queenstown van sobreviure més que la resta.
+
+
+Model de analisis de variança (ANOVA)
+
+Procedim a executar el model Anova per comparar les variançes entre els promitgs dels diferents grups seleccionats amb supervivència
+
+```{r message= FALSE, warning=FALSE}
+
+# Aplicació del model amb la variable Pclass
+
+test1 = aov(df$Survived ~ df$Pclass)
+anova(test1)
+
+# Aplicació del model amb la variable sex
+
+test2 = aov(df$Survived ~ df$Sex)
+anova(test2)
+
+# Aplicació del model amb la variable Age
+
+test3 = aov(df$Survived ~ df$Age)
+anova(test3)
+
+# Aplicació del model amb la variable Embarked
+
+test4 = aov(df$Survived ~ df$Embarked)
+anova(test4)
+
+
+```
+Hi ha importants efectes principals en la classe del Passatger, sexe i port d'Embarcament. Això es veu
+reforçat una vegada més en els models de'ANOVA d'interacció bidireccional.
 
 
 # Representació de resultats (taules i gràfiques).
