@@ -481,11 +481,31 @@ Hi ha importants efectes principals en la classe del Passatger, sexe i port d'Em
 reforçat una vegada més en els models de'ANOVA d'interacció bidireccional.
 
 
-# Representació de resultats (taules i gràfiques).
+Analisis de regressió logístic
 
 ```{r message= FALSE, warning=FALSE}
 
-# Placeholder
+df2 = dataset[,c(1,2,4,5,11)] #creem un nou dataset "df2" a partir del creat anteriorment 
+
+# tornem a categoritzar la variable Age per poder executar el model
+
+df2$Age[df2$Age <= 18] = "child"
+df2$Age[(df2$Age > 18) & (df2$Age <= 60) & (df2$Age != "child")] = "adult"
+df2$Age[(df2$Age != "child") & (df2$Age != "adult")] = "senior"
+df2$Age = as.factor(df2$Age)
+
+# Apliquem el model de regressió agafant com a variable independent "survived"
+
+model <- glm(Survived ~ Age + Sex + Pclass + Embarked,family=binomial(link = 'logit'), data=df2)
+summary(model)
+
+```
+Com s'observa amb la interpretació del model aplicat podem verificar que les variables class, Sex són clarament significatives ja que ens ho indiquen amb el simbol *** , concretament Sex(male), Pclass(3) i Embarked(S) ja que el valor de z value ens indica major de 2 ja sigui positiu o en negatiu.   
+
+
+```{r message= FALSE, warning=FALSE}
+
+#summary(dataset)
 
 ```
 
