@@ -3,17 +3,17 @@ title: 'Pràctica 2: Neteja i anàlisi de les dades'
 author: 'Adrián Alonso Gonzalo i Alexandre Vidal De Palol'
 date: "Maig/Juny 2022"
 output:
-  pdf_document:
-    latex_engine: xelatex
-    highlight: zenburn
-    toc: yes
-    number_sections: true
   html_document:
     highlight: default
     number_sections: yes
     theme: cosmo
     toc: yes
     toc_depth: 3
+  pdf_document:
+    latex_engine: xelatex
+    highlight: zenburn
+    toc: yes
+    number_sections: true
   word_document: default
 ---
 
@@ -334,182 +334,125 @@ dataset$Fare[c(1044)] <- mean_fare
 
 ```
 
-## Altres accions per a la neteja del joc de dades.
-
-Primerament, observem que la primera variable "PassengerId" no és res més que un identificador, per tant procedim a eliminar-la del conjunt de dades ja que no ens interessa per l'estudi.
-
-```{r message= FALSE, warning=FALSE}
-
-# eliminació de la primera columna PassengerId
-dim(unique(dataset$PassengerId))
-dataset <- dataset[,-1]
-
-```
-
-Observem que les variables 'Survived' i 'Pclass' són de tipus enter, però la seva funció es indicar una categoria. Per tant, procedim a convertir-les en tipu factor.
-
-```{r message= FALSE, warning=FALSE}
-
-# transformació de les variables 
-
-dataset$Survived <- as.factor(dataset$Survived)
-class(dataset$Survived)
-
-dataset$Pclass <- as.factor(dataset$Pclass)
-class(dataset$Pclass)
-
-```
-
 
 # Anàlisi de les dades.
 
 ## Selecció de grups a analitzar/comparar.
 
-Per a aquest estudi, treballem amb només quatre variables d'entrada i una variable de resposta.
-Les quatre variables d'entrada són Class, Sex, Age i Embarked.
-La variable de resposta és si van sobreviure o no.
+Per a aquest estudi, utilitzarem les files que provenen del joc de dades "train.csv" i farem una comparació entre la població de persones que va sobreviure i les que no (**Survived**) per veure com va poder influenciar la variable edat en aquests fets (**Age**).
 
-Convertim la variable Age en categòrica de la següent manera:
-• Si age <= 18, llavors age = child
-• Si 18 < age <= 60, llavors age = adult
-• Si age > 60, llavors age = senior
+A continuació, ens disposem a dividir el joc de dades en 2 (un per cada valor de la columna **Survived**).
 
 ```{r message= FALSE, warning=FALSE}
 
 # Selecció dels grups a analitzar
-df = dataset[,c(1,2,4,5,11)]
+train_dataset <- dataset[dataset$row_type == "train", ]
+survived_dataset <- train_dataset[train_dataset$Survived == 1, ]
+did_not_survive_dataset <- train_dataset[train_dataset$Survived == 0, ]
 
-# Categorització variable age
-df$Age[df$Age <= 18] = "child"
-df$Age[(df$Age > 18) & (df$Age <= 60) & (df$Age != "child")] = "adult"
-df$Age[(df$Age != "child") & (df$Age != "adult")] = "senior"
-df$Age = as.factor(df$Age)
-
-# resum selecció de dades
-summary(df)
 ```
 
 ## Normalitat i homogeneïtat de la variància.
 
+En aquest apartat, comprovem que les poblacions provenen de mostres normalment distribuïdes en quant a la columna **Age**. Per fer-ho, construïm els histogrames d'ambdues poblacions conjuntament amb el QQ-plot. 
+
 ```{r message= FALSE, warning=FALSE}
 
-# Placeholder
+# Generem l'histograma i el QQ-plot pel grup 'survived_dataset'
+par(mfrow=c(1,2))
+hist(x = survived_dataset$Age)
+qqnorm(survived_dataset$Age, pch = 1, frame = FALSE)
+qqline(survived_dataset$Age, col = "steelblue", lwd = 2)
+
+# Generem l'histograma i el QQ-plot pel grup 'did_not_survive_dataset'
+par(mfrow=c(1,2))
+hist(x = did_not_survive_dataset$Age)
+qqnorm(did_not_survive_dataset$Age, pch = 1, frame = FALSE)
+qqline(did_not_survive_dataset$Age, col = "steelblue", lwd = 2)
 
 ```
+
+Com podem veure als histogrames i als QQ-plots, podem assumir que ambdos grups provenen d'una mostra normalment distribuïda. L'histograma s'assimila molt a la funció de densitat d'una variable amb distribució normal i el QQ-plot ens mostre com els valors de la mostra és troben sobre la QQ-line. Per tant, podem concloure amb l'ajuda d'aquest gràfics que la variable **Age** de les dues poblacions escollides segueix una **distribució normal**.
+
+A continuació, passem a comprovar la homogeneïtat de la variància o també coneguda com a **homocedasticitat**. Com sabem que ambdues mostres segueixen una distribució normal, el que farem serà aplicar el F-Test. Aquesta prova d'R ens permetrà comparar les variances dels dos grups.
+
+```{r message= FALSE, warning=FALSE}
+
+# Realització del test i mostra dels resultats
+set.seed(1) 
+result <- var.test(Age ~ Survived, data = train_dataset)
+print(result)
+
+```
+
+Com podem comprovar, el **p-valor** és superior a 0,05. És a dir, podem, amb un 95% de nivell de confiança descartar la hipòtesi alternativa i quedar-nos amb la hipòtesi nul·la. La hipòtesi nul·la d'aquest test menciona que les **variancies dels dos grups són similars**.
 
 ## Aplicació de proves estadístiques per a la comparació de grups.
 
+A continuació, mostrem diverses proves fetes amb la finalitat d'extreure informació sobre l'impacte de la variable **Age** en el fet de sobreviure o no.
+
+### T-test.
+
+Començem realitzant la prova **t-test**, que té com a objectiu determinar si les mitjanes de dos grups són iguals o no ho són. El test assumeix que els grups provenen de distribucions normals amb les mateixes variances. Com ja hem comprovat aquests dos fets, procedim a executar el test.
+
 ```{r message= FALSE, warning=FALSE}
-# Abans de executar les proves convertim el datafrem categoric en numèric
-df$Pclass = as.integer(df$Pclass)
-df$Sex = as.integer(df$Sex)
-df$Age = as.integer(df$Age)
-df$Embarked = as.integer(df$Embarked)
-df$Survived = as.integer(df$Survived)
-head(df)
 
-# Analisi de l'efecte entre Pclass i supervivència
+min_rows <- min(dim(survived_dataset)[1], dim(did_not_survive_dataset)[1])
+test_dataset <- rbind(survived_dataset[1:min_rows, ], did_not_survive_dataset[1:min_rows, ])
 
-me_pclass = c(0,0,0)
-me_pclass[1] = mean(df$Survived[df$Pclass==1])
-me_pclass[2] = mean(df$Survived[df$Pclass==2])
-me_pclass[3] = mean(df$Survived[df$Pclass==3])
-plot(me_pclass, type="o", main="Efecte principal de Passenger Class", xlab="Passenger Class", ylab="Efecte principal",
-     xaxt="n")
-axis(1, at=c(1,2,3), labels=c("1er", "2nd", "3er"))
+# Realitzem el t-test
+T_test <- t.test(Age ~ Survived, data = test_dataset, paired = TRUE)
+T_test
 
-# Analisi de l'efecte entre sex i supervivència
-
-me_sex = c(0,0)
-me_sex[1] = mean(df$Survived[df$Sex==1])
-me_sex[2] = mean(df$Survived[df$Sex==2])
-plot(me_sex, type="o", main="Efecte principal de Sex", xlab="Sex", ylab="Efecte principal", xaxt="n")
-axis(1, at=c(1,2), labels=c("Dona", "Home"))
-
-# Analisi de l'efecte entre age i supervivència
-
-me_age = c(0,0,0)
-me_age[1] = mean(df$Survived[df$Age==1])
-me_age[2] = mean(df$Survived[df$Age==2])
-me_age[3] = mean(df$Survived[df$Age==3])
-plot(me_age, type="o", main="Efecte principal de Age", xlab="Age", ylab="Efecte principal", xaxt="n")
-axis(1, at=c(1,2,3), labels=c("Adult", "Children", "Senior"))
-
-# Analisi de l'efecte entre Embarked i supervivència
-
-me_emb = c(0,0,0)
-me_emb[1] = mean(df$Survived[df$Embarked==1])
-me_emb[2] = mean(df$Survived[df$Embarked==2])
-me_emb[3] = mean(df$Survived[df$Embarked==3])
-plot(me_emb, type="o", main="Efecte principal de Port of Embarkment", xlab="Port of Embarkment", ylab="Efecte principal",
-     xaxt="n")
-axis(1, at=c(1,2,3), labels=c("Cherbourg", "Queenstown", "Southampton"))
+# Il·lustrem el t-test
+ggplot(train_dataset, aes(as.factor(Survived), Age)) + geom_boxplot()
 
 ```
-Com s'observa en els gràfics anteriors podem afirmar que de mitjana els passatgers de 1 era classe, dones, nens i que embarcaven a Queenstown van sobreviure més que la resta.
+
+Com podem comprovar, el **p-valor** esta per sobre de 0.05. És a dir, amb un 95% de nivell de confiança podem confirmar/concloure que no hi ha diferencia entre les mitjanes de les dues poblacions. Això vol dir, que, en el fet de sobreviure o no, no va tenir un impacte gran l'edat de les persones que anaven a bord.
 
 
-Model de analisis de variança (ANOVA)
+### ANOVA.
 
-Procedim a executar el model Anova per comparar les variançes entre els promitgs dels diferents grups seleccionats amb supervivència
+La segona prova que executarem s'anomena **ANOVA**, one-way analysis of variance. Aquesta prova també compara les mitjanes entre grups (com ja hem fet amb la prova anterior).
+
+A continuació, executem el test i mostrem els resultats.
 
 ```{r message= FALSE, warning=FALSE}
 
-# Aplicació del model amb la variable Pclass
-
-test1 = aov(df$Survived ~ df$Pclass)
-anova(test1)
-
-# Aplicació del model amb la variable sex
-
-test2 = aov(df$Survived ~ df$Sex)
-anova(test2)
-
-# Aplicació del model amb la variable Age
-
-test3 = aov(df$Survived ~ df$Age)
-anova(test3)
-
-# Aplicació del model amb la variable Embarked
-
-test4 = aov(df$Survived ~ df$Embarked)
-anova(test4)
-
+# Realitzem el test ANOVA i mostrem els resultats
+ANOVA_test <- aov(Age ~ Survived, data = train_dataset)
+summary(ANOVA_test)
 
 ```
-Hi ha importants efectes principals en la classe del Passatger, sexe i port d'Embarcament. Això es veu
-reforçat una vegada més en els models de'ANOVA d'interacció bidireccional.
 
+De manera similar al test anterior, en aquest, el **p-valor** és superior a 0.05. És a dir, amb un 95% de nivell de confiança podem confirmar/concloure que no hi ha diferencia entre les mitjanes de les dues poblacions. Això vol dir, que, en el fet de sobreviure o no, no va tenir un impacte gran l'edat de les persones que anaven a bord, com ja haviem esmentat anteriorment amb l'ajut del **t-test**.
 
-Analisis de regressió logístic
+### Regressió logistica.
+
+Per últim, tot i que no és, de manera estrica, un test estadístic de comparació, realitzarem una regressió logistica per comprovar fins quin punt, la variació de la variable **Survived** pot ser explicada per la variació dels valors en la variable **Age**.
+
+A continuació, construïm el model i mostrem un resum del mateix.
 
 ```{r message= FALSE, warning=FALSE}
 
-df2 = dataset[,c(1,2,4,5,11)] #creem un nou dataset "df2" a partir del creat anteriorment 
-
-# tornem a categoritzar la variable Age per poder executar el model
-
-df2$Age[df2$Age <= 18] = "child"
-df2$Age[(df2$Age > 18) & (df2$Age <= 60) & (df2$Age != "child")] = "adult"
-df2$Age[(df2$Age != "child") & (df2$Age != "adult")] = "senior"
-df2$Age = as.factor(df2$Age)
-
-# Apliquem el model de regressió agafant com a variable independent "survived"
-
-model <- glm(Survived ~ Age + Sex + Pclass + Embarked,family=binomial(link = 'logit'), data=df2)
+model <- glm(Survived ~ Age + Sex + Pclass + Embarked,family=binomial(link = 'logit'), data=train_dataset)
 summary(model)
 
 ```
-Com s'observa amb la interpretació del model aplicat podem verificar que les variables class, Sex són clarament significatives ja que ens ho indiquen amb el simbol *** , concretament Sex(male), Pclass(3) i Embarked(S) ja que el valor de z value ens indica major de 2 ja sigui positiu o en negatiu.   
 
-
-```{r message= FALSE, warning=FALSE}
-
-#summary(dataset)
-
-```
+Com s'observa amb la interpretació del model aplicat podem verificar que les variables class, Sex són clarament significatives ja que ens ho indiquen amb el simbol ***, concretament Sex(male), Pclass(3) i Embarked(S) ja que el valor del Z-value és més gran que 2 ja sigui en positiu o en negatiu.
 
 
 # Conclusions.
+
+Les conclusions que podem extreure amb els anàlisis realitzats són les següents:
+
+-
+-
+-
+-
+-
+
 
  
