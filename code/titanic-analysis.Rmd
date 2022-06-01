@@ -13,6 +13,7 @@ output:
     latex_engine: xelatex
     highlight: zenburn
     toc: yes
+    toc_depth: 3
     number_sections: true
   word_document: default
 ---
@@ -36,9 +37,9 @@ library(dplyr)
 
 # Descripció i càrrega del dataset.
 
-Els conjunts de dades train.csv i 'test.csv' que es troben a la carpeta 'data/input' d'aquest paquet s'han obtingut del web https://www.kaggle.com/c/titanic.
+El conjunt de dades 'train.csv' que es troba a la carpeta 'data/input' d'aquest paquet s'ha obtingut del web https://www.kaggle.com/c/titanic.
 
-Aquests conjunts de dades contenen informació sobre la tripulació del Titanic amb 12 (11 el de test) columnes i un total de 891 registres (418 el de test).
+Aquest conjunt de dades contene informació sobre la tripulació del Titanic amb 12 columnes i un total de 891 registres.
 
 Les variables d’aquesta mostra son:
 
@@ -59,53 +60,30 @@ A continuació, passem a carregar el fitxer i a mostrar una sèrie de metadades 
 
 ```{r message= FALSE, warning=FALSE}
 
-# Carreguem els fitxers 'test.csv' i 'train.csv' de la carpeta 'data/input' (indicant que volem els 'strings' com 'factors')
-test_dataset <- read.csv("../data/input/test.csv", stringsAsFactors=TRUE)
-train_dataset <- read.csv("../data/input/train.csv", stringsAsFactors=TRUE)
+# Carreguem el fitxer 'train.csv' de la carpeta 'data/input' (indicant que volem els 'strings' com 'factors')
+dataset <- read.csv("../data/input/train.csv", stringsAsFactors=TRUE)
 
-# Mostrem les primeres files dels jocs de dades
-head(test_dataset)
-head(train_dataset)
-
-# Creem una nova columna amb el nom del dataset del qual provenen les files
-test_dataset['row_type'] <- as.factor('test')
-train_dataset['row_type'] <- as.factor('train')
-
-# Creem la columna 'Survived' ja que el joc de dades de test no la conté (introduïrem un valor dummy que després eliminarem)
-test_dataset['Survived'] <- 99
-
-# Juntem els dos jocs de dades en un únic dataset per poder netejar els dos a la vegada
-dataset <- rbind(train_dataset, test_dataset[,colnames(train_dataset)])
-
-# Mostrem les primeres files del dataset unificat
+# Mostrem les primeres files del joc de dades
 head(dataset)
 
 # Mostrem l'estructura del dataset
 str(dataset)
 
-# Mostrem un resum de les estadistiques de les columnes del dataset
-summary(dataset)
-
-# Mostrem el número de files del joc de dades unificat i per separat
-dim(dataset)[1]
-dim(dataset[dataset$row_type=='test',])[1]
-dim(dataset[dataset$row_type=='train',])[1]
-
 ```
 
-Observem que que el dataset conté 3 tipus de variables del quals caràcter, numèric i enter.
+Observem que el dataset conté 3 tipus de variables, caràcter (factor), numèric i enter.
+
+Aquest dataset és interessant per la nostre recerca d'informació ja que estem intentat veure si la variabñe **Age** va tenir un impacte molt gran o no entre la gent que va sobreviure a la tragèdia del Titanic o no. Apart de l'edat, estem interessats en veure quines són les variables amb més pes en la variancia del valor de la columna **Survived**. 
 
 # Integració i selecció de les dades d’interès a analitzar.
 
-
 El procés d'integració i selecció de les dades es realitzarà al llarg del procés de neteja
-i anàlisi de les diverses variables del conjunt de dades d'entrenament del dataset (on la columna 'row_type' és igual a 'train').
+i anàlisi de les diverses variables del conjunt de dades del dataset.
 
-En aquest procés es pretén anar analitzant les diferents variables en el procés de neteja i anàlisi, i en
-funció de les característiques que es vagin observant de les diverses variables es prendrà la decisió d'utilitzar un conjunt seleccionat el qual pugui ser útil per a la predicció del model i la comprovació amb el conjunt de test o validació.
+En aquest procés es pretén anar analitzant les diferents variables en el procés de neteja i anàlisi, i en funció de les característiques que es vagin observant de les diverses variables es prendrà la decisió d'utilitzar un conjunt seleccionat el qual pugui ser útil per l'anàlisi de les dades.
 
-El resultat del projecte pot respondre a possibles causes de mort dels tripulants que no van sobreviure a la tragèdia del Titanic, permetent
-establir models d'inferència sobre les causes relatives a la mortalitat entre diversos tipus de passatgers.
+El resultat del projecte pot respondre a possibles causes de mort dels tripulants que no van sobreviure a la tragèdia del Titanic, permetent establir models d'inferència sobre les causes relatives a la mortalitat entre diversos tipus de passatgers.
+
 Per altra banda la implementació de un model d'interès sobre quines han sigut variables que han influït més o menys en la supervivència del naufragi.
 
 ```{r message= FALSE, warning=FALSE}
@@ -114,7 +92,6 @@ Per altra banda la implementació de un model d'interès sobre quines han sigut 
 head(dataset)
 
 ```
-
 
 # Neteja de dades.
 
@@ -160,6 +137,7 @@ A continuació, crearem dos histogrames amb la finalitat de comprovar que els va
 ```{r pplot, echo = FALSE, warning = FALSE}
 
 # Creem histogramas per observar si els valors imputats a la variable 'Age' mostren gaire diferència
+par(mfrow=c(1,2))
 ggplot(dataset, aes(x=Age))+geom_density(adjust=.5)+labs(title="Original Data")
 ggplot(trained_mouse, aes(x=Age))+geom_density(adjust=.5)+labs(title="Inputed Data")
 
@@ -171,6 +149,17 @@ Observem que els dos gràfics són raonablement semblants, per tant procedim a r
 
 # Insertem a la columna 'Age' del dataset original la nova columna calculada amb la lliberia 'mice'
 dataset$Age <- trained_mouse$Age
+
+```
+
+### Ajust de la variable 'Cabin'.
+
+Com gran part de les observacions conté la columna **Cabin** sense informar, 687 de les 891 observacions, hem decidit eliminar aquesta columna del nostre joc de dades.
+
+```{r message= FALSE, warning=FALSE}
+
+# Eliminem la columna 'Cabin'
+dataset$Cabin <- NULL
 
 ```
 
@@ -205,37 +194,6 @@ dataset$Embarked[c(62, 830)] <- 'S'
 
 ```
 
-### Ajust de la variable 'Fare'.
-
-En aquest cas, com només es tracta d'un registre que no conté la dada, el que farem serà introduïr la mitjana de la resta de valors d'aquesta columna. Aquesta tècnica d'inputació de dades és molt freqüent quan la quantitat de valors no informats és petita i quan l'atribut és del tipus numèric. 
-
-Primer de tot, busquem on està localitzat el valor perdut de la variable **Fare**.
-
-```{r message= FALSE, warning=FALSE}
-
-# Trobem quina és la posició de l'observació que conté el valor buit/NULL
-which(is.na(dataset$Fare))
-
-```
-
-A continuació, trobem la mitjana del total dels tiquets excloent el valor perdut.
-
-```{r message= FALSE, warning=FALSE}
-
-# Calculem la mitjana dels valors de la columna 'Fare' eliminant el registre amb valor buit
-mean_fare <- mean(dataset$Fare, na.rm = TRUE)
-
-```
-
-Per últim, inputem el el valor obtingut al valor perdut de la columna **Fare**.
-
-```{r message= FALSE, warning=FALSE}
-
-# Definim el valor de l'observació número '1044' amb el valor de la mitjana abans calculat
-dataset$Fare[c(1044)] <- mean_fare
-
-```
-
 ### Comprovació de valors buits.
 
 Com podem observar en el càlcul que computarem a continuació, la quantitat de valors no informats després del tractament és de zero observacions.
@@ -253,61 +211,58 @@ apply(is.na(dataset),2, sum)
 
 L'estudi de valors extrem el farem només en les variables del tipus quantitatiu. Això és així ja que, per les variables del tipus qualitatiu, és molt difícil saber que vol dir que un valor esta fora del que es considera 'normal' (o similar a la resta).
 
-### Identificació de les columnes amb valors extrems
+### Identificació de les columnes amb valors extrems.
 
 A continuació, passem a mostrar una sèrie de gràfiques i taules d'estadístiques que ens ajudaran a identificar aquells atributs amb valors extrems.
 
 ```{r message= FALSE, warning=FALSE}
 
-# Mostrem l'histograma i un resum de la variable 'Survived'
+# Mostrem els histogrames de cada variable numèrica
+par(mfrow=c(3,2))
 hist(dataset$Survived, col = "blue")
-summary(dataset$Survived)
-table(dataset$Survived)
-
-# Mostrem l'histograma i un resum de la variable 'Survived'
 hist(dataset$Pclass, col = "blue")
-summary(dataset$Pclass)
-table(dataset$Pclass)
-
-# Mostrem l'histograma i un resum de la variable 'Age'
 hist(dataset$Age, col = "blue")
-summary(dataset$Age)
-
-# Mostrem l'histograma i un resum de la variable 'SibSp'
 hist(dataset$SibSp, col = "blue")
-summary(dataset$SibSp)
-table(dataset$SibSp)
-
-# Mostrem l'histograma i un resum de la variable 'Parch'
 hist(dataset$Parch, col = "blue")
-summary(dataset$Parch)
-table(dataset$Parch)
-
-# Mostrem l'histograma i un resum de la variable 'Fare'
 hist(dataset$Fare, col = "blue")
+
+# Mostrem el summary de les variables numèriques
+summary(dataset$Survived)
+summary(dataset$Pclass)
+summary(dataset$Age)
+summary(dataset$SibSp)
+summary(dataset$Parch)
 summary(dataset$Fare)
+
+# Mostrem les freqüències d'algunes variables numèriques (les que sabem que són més agrupades)
+table(dataset$Survived)
+table(dataset$Pclass)
+table(dataset$SibSp)
+table(dataset$Parch)
+head(table(dataset$Fare))
+tail(table(dataset$Fare))
 
 ```
 
 D'aquesta informació, observem el següent:
 
-- **Survived**: Tots els valors són o bé 0 o bé 1. Els valors 99 són els que hem inputat nosaltres quan hem fet el *merge* del joc de dades de 'test' amb el de 'train'. No hi ha cap fora dels valors esperats i, per tant, no eliminarem cap registre en base a aquest atribut.
+- **Survived**: Tots els valors són o bé 0 o bé 1. No hi ha cap fora dels valors esperats i, per tant, no eliminarem cap registre en base a aquest atribut.
 
 - **Pclass**: Tots els valors són o bé 1 o bé 2 o bé 3. Les diferents classes de tiquet. No hi ha cap fora dels valors esperats i, per tant, no eliminarem cap registre en base a aquest atribut.
 
-- **Age**: El mínim és 0.17 i el màxim és 80. No hi ha cap edat que cridi l'atenció com per considerar-la fora de l'esperat i eliminar-la del joc de dades.
+- **Age**: El mínim és 0.42 i el màxim és 80. No hi ha cap edat que cridi l'atenció com per considerar-la fora de l'esperat i eliminar-la del joc de dades.
 
-- **SibSp**: Gran part dels valors són enters entre 0 i 1. Hi ha un 9 observacions amb un valor allunyat de la resta com és el valor 8. Tot i això, és un valor que seria possible ja que existeixen families numerosas amb aquesta quantitat de fills. En el nostre cas, no eliminarem aquestes observacions ja que no les considerem extremes (tot i que sí poc probables).
+- **SibSp**: Gran part dels valors són enters entre 0 i 1. Hi ha un 7 observacions amb un valor allunyat de la resta com és el valor 8. Tot i això, és un valor que seria possible ja que existeixen families numerosas amb aquesta quantitat de fills. En el nostre cas, no eliminarem aquestes observacions ja que no les considerem extremes (tot i que sí poc probables).
 
-- **Parch**: Gran part dels valors són enters entre 0 i 1. Hi ha 2 observacions amb un valor allunyat de la resta com és el valor 9. Tot i això, és un valor que seria possible ja que existeixen families numerosas amb aquesta quantitat de fills. En el nostre cas, no eliminarem aquestes observacions ja que no les considerem extremes (tot i que sí poc probables).
+- **Parch**: Gran part dels valors són enters entre 0 i 1. Hi ha 1 observacions amb un valor allunyat de la resta com és el valor 6. Tot i això, és un valor que seria possible ja que existeixen families numerosas amb aquesta quantitat de fills. En el nostre cas, no eliminarem aquestes observacions ja que no les considerem extremes (tot i que sí poc probables).
 
-- **Fare**: Existeixen 4 observacions amb un valor extremadament allunyat de la resta. Aquest valor és el valor 512.329 que és el màxim de la variable. Com hem pogut observar al resum d'estadístiques, la mitjana dels valors d'aquesta columna és 33.295, és a dir, es troba molt lluny de la tendència de valors (també de la mediana i dels quartils). És per aquest motiu que eliminarem aquesta observació i recalcularem la mitjana per introduïrla en els valors que originalment eren buits (ja que abans ho haviem fet amb una mitjana esbiaixada).
+- **Fare**: Existeixen 3 observacions amb un valor extremadament allunyat de la resta. Aquest valor és el valor 512.329 que és el màxim de la variable. Com hem pogut observar al resum d'estadístiques, la mitjana dels valors d'aquesta columna és 29.57, és a dir, es troba molt lluny de la tendència de valors (també de la mediana i dels quartils). És per aquest motiu que eliminarem aquestes observacions.
 
 Cal apuntar que tot i que hi hagi d'altres valors de la variable **Fare** que semblin extrems, creiem que es poden arribar a donar i és per aquest motiu que els mantindrem.
 
-### Ajust de la variable 'Fare'
+### Ajust de la variable 'Fare'.
 
-A continuació eliminarem el registre que conté el valor extrem en la variable **Fare** i recalcularem la mitjana per introduïrla en els valors que originalment eren buits (ja que abans ho haviem fet amb una mitjana esbiaixada).
+A continuació eliminarem el registre que conté el valor extrem en la variable **Fare**.
 
 ```{r message= FALSE, warning=FALSE}
 
@@ -329,26 +284,32 @@ max(dataset$Fare)
 # Calculem la mitjana de la variable 'Fare'
 mean_fare <- mean(dataset$Fare)
 
-# Introduïm el nou valor en l'observació que originalment era buida (l'observació 1044)
-dataset$Fare[c(1044)] <- mean_fare
-
 ```
 
+# Joc de dades final.
+
+En aquesta secció, guardem el joc de dades un cop feta la neteja.
+
+```{r message= FALSE, warning=FALSE}
+
+# Guardem el joc de dades a la carpeta 'data/output'
+write.csv(dataset,'../data/output/train.csv', row.names = TRUE)
+
+```
 
 # Anàlisi de les dades.
 
 ## Selecció de grups a analitzar/comparar.
 
-Per a aquest estudi, utilitzarem les files que provenen del joc de dades "train.csv" i farem una comparació entre la població de persones que va sobreviure i les que no (**Survived**) per veure com va poder influenciar la variable edat en aquests fets (**Age**).
+Per a aquest estudi, utilitzarem les files del joc de dades i farem una comparació entre la població de persones que va sobreviure i les que no (**Survived**) per veure com va poder influenciar la variable edat en aquests fets (**Age**).
 
 A continuació, ens disposem a dividir el joc de dades en 2 (un per cada valor de la columna **Survived**).
 
 ```{r message= FALSE, warning=FALSE}
 
 # Selecció dels grups a analitzar
-train_dataset <- dataset[dataset$row_type == "train", ]
-survived_dataset <- train_dataset[train_dataset$Survived == 1, ]
-did_not_survive_dataset <- train_dataset[train_dataset$Survived == 0, ]
+survived_dataset <- dataset[dataset$Survived == 1, ]
+did_not_survive_dataset <- dataset[dataset$Survived == 0, ]
 
 ```
 
@@ -380,7 +341,7 @@ A continuació, passem a comprovar la homogeneïtat de la variància o també co
 
 # Realització del test i mostra dels resultats
 set.seed(1) 
-result <- var.test(Age ~ Survived, data = train_dataset)
+result <- var.test(Age ~ Survived, data = dataset)
 print(result)
 
 ```
@@ -397,15 +358,16 @@ Començem realitzant la prova **t-test**, que té com a objectiu determinar si l
 
 ```{r message= FALSE, warning=FALSE}
 
+# Calculem el mínim de files entre els dos jocs de dades per utilitzar la mateixa quantitat al T-test
 min_rows <- min(dim(survived_dataset)[1], dim(did_not_survive_dataset)[1])
-test_dataset <- rbind(survived_dataset[1:min_rows, ], did_not_survive_dataset[1:min_rows, ])
+t_test_dataset <- rbind(survived_dataset[1:min_rows, ], did_not_survive_dataset[1:min_rows, ])
 
 # Realitzem el t-test
-T_test <- t.test(Age ~ Survived, data = test_dataset, paired = TRUE)
+T_test <- t.test(Age ~ Survived, data = t_test_dataset, paired = TRUE)
 T_test
 
 # Il·lustrem el t-test
-ggplot(train_dataset, aes(as.factor(Survived), Age)) + geom_boxplot()
+ggplot(dataset, aes(as.factor(Survived), Age)) + geom_boxplot()
 
 ```
 
@@ -421,7 +383,7 @@ A continuació, executem el test i mostrem els resultats.
 ```{r message= FALSE, warning=FALSE}
 
 # Realitzem el test ANOVA i mostrem els resultats
-ANOVA_test <- aov(Age ~ Survived, data = train_dataset)
+ANOVA_test <- aov(Age ~ Survived, data = dataset)
 summary(ANOVA_test)
 
 ```
@@ -436,25 +398,30 @@ A continuació, construïm el model i mostrem un resum del mateix.
 
 ```{r message= FALSE, warning=FALSE}
 
-model <- glm(Survived ~ Age + Sex + Pclass + Embarked,family=binomial(link = 'logit'), data=train_dataset)
+# Creem el model de regressió logistica i mostrem un resum del mateix
+model <- glm(Survived ~ Age + Sex + Pclass + Embarked,family=binomial(link = 'logit'), data=dataset)
 summary(model)
 
 ```
 
 Com s'observa amb la interpretació del model aplicat podem verificar que les variables class, Sex són clarament significatives ja que ens ho indiquen amb el simbol ***, concretament Sex(male), Pclass(3) i Embarked(S) ja que el valor del Z-value és més gran que 2 ja sigui en positiu o en negatiu.
 
-
-
-
 # Conclusions.
 
 Les conclusions que podem extreure amb els anàlisis realitzats són les següents:
 
-- Després d'aplicar i executar la prova t-test en les mostres de població podem concloure que, amb un 95% de nivell de confiança i un p-valor de 0.6741, no existeix    diferència entre les mitjanes de les poblacions, d'aquesta manera provem que l'edat no va ser una variable rellevent en quant a la supervivència del Titanic.         Aquesta mateixa conclusió també la corroborem amb la prova ANOVA (one-way analysis of variance) ja que el p-valor obté un resultat de 0.505, clarament superior a     0.05.
-- El model de regressió logístic lineal creat per predir la probabilitat que les diverses variables siguin significatives en quan a la supervivencia del naufragi, ens   expliquen que el fet de ser home o dona i de pertanya a una classe o a una altra va ser clarament significatiu en relació a la supervivència del Titanic ja que el    pvalor de Sex i Pclass són superior a 2 ja sigui en positiu o negatiu.
--
--
--
+- Els anàlisis desenvolupats ens han permès trobar la resposta a les preguntes que ens plantejavem al principi de la pràctica: quin paper va jugar la variable **Age** en el fet de que les persones del Titanic sobrevisquessin? quines van ser les variables amb més impacte en aquest fet?
 
+- Després d'aplicar i executar la prova t-test en les mostres de població podem concloure que, amb un 95% de nivell de confiança, no existeix diferència entre les mitjanes de les poblacions, d'aquesta manera provem que l'edat no va ser una variable rellevent en quant a la supervivència del Titanic.
 
+- Aquesta mateixa conclusió també la corroborem amb la prova ANOVA (one-way analysis of variance) ja que el p-valor obté un resultat clarament superior a 0.05.
+
+- El model de regressió logístic lineal creat per predir la probabilitat que les diverses variables siguin significatives en quan a la supervivencia del naufragi, ens expliquen que el fet de ser home o dona i de pertanyer a una classe o a una altra va ser clarament significatiu en relació a la supervivència del Titanic ja que el p-valor de les variables **Sex** i **Pclass** són superior a 2 ja sigui en positiu o negatiu.
  
+# Contribucions.
+
+| **Contribucions** | **Firma** |
+|---|---|
+| Investigació prèvia | A.A.G/A.V.P |
+| Redacció de les respostes | A.A.G/A.V.P |
+| Desenvolupament codi | A.A.G/A.V.P |
