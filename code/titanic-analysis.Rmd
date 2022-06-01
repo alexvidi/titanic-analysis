@@ -444,12 +444,14 @@ summary(model)
 Com s'observa amb la interpretació del model aplicat podem verificar que les variables class, Sex són clarament significatives ja que ens ho indiquen amb el simbol ***, concretament Sex(male), Pclass(3) i Embarked(S) ja que el valor del Z-value és més gran que 2 ja sigui en positiu o en negatiu.
 
 
+
+
 # Conclusions.
 
 Les conclusions que podem extreure amb els anàlisis realitzats són les següents:
 
--
--
+- Després d'aplicar i executar la prova t-test en les mostres de població podem concloure que, amb un 95% de nivell de confiança i un p-valor de 0.6741, no existeix    diferència entre les mitjanes de les poblacions, d'aquesta manera provem que l'edat no va ser una variable rellevent en quant a la supervivència del Titanic.         Aquesta mateixa conclusió també la corroborem amb la prova ANOVA (one-way analysis of variance) ja que el p-valor obté un resultat de 0.505, clarament superior a     0.05.
+- El model de regressió logístic lineal creat per predir la probabilitat que les diverses variables siguin significatives en quan a la supervivencia del naufragi, ens   expliquen que el fet de ser home o dona i de pertanya a una classe o a una altra va ser clarament significatiu en relació a la supervivència del Titanic ja que el    pvalor de Sex i Pclass són superior a 2 ja sigui en positiu o negatiu.
 -
 -
 -
