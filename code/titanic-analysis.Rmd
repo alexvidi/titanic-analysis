@@ -3,18 +3,18 @@ title: 'Pràctica 2: Neteja i anàlisi de les dades'
 author: 'Adrián Alonso Gonzalo i Alexandre Vidal De Palol'
 date: "Maig/Juny 2022"
 output:
-  html_document:
-    highlight: default
-    number_sections: yes
-    theme: cosmo
-    toc: yes
-    toc_depth: 3
   pdf_document:
     latex_engine: xelatex
     highlight: zenburn
     toc: yes
     toc_depth: 3
     number_sections: true
+  html_document:
+    highlight: default
+    number_sections: yes
+    theme: cosmo
+    toc: yes
+    toc_depth: 3
   word_document: default
 ---
 
