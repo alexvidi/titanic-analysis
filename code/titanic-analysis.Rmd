@@ -165,27 +165,17 @@ dataset$Cabin <- NULL
 
 ### Ajust de la variable 'Embarked'.
 
-Com hem vist anteriorment, hi ha dos valors de la variable **Embarked** que falten. Per trobar el valor d'aquestes dues observacions, procedim a verificar-ho amb l'ajuda dels valors de la variable **Cabin**.
+Com hem vist anteriorment, hi ha dos valors de la variable **Embarked** que falten. Per trobar el valor d'aquestes dues observacions, procedim a verificar-ho buscant el tipus de embarcament més repetit .
 
-A partir de les dades, podem comprobar que totes les cabines que comencen amb **B** es van embarcar des de les ciutats de Southampton o Charbourg.
-
-```{r message= FALSE, warning=FALSE}
-
-# Mostrem els valors únics de la variable 'Embark' quan el nom de la cabina comença per 'B'
-unique(dataset[grep("*^B", dataset$Cabin),]$Embarked)
-
-```
-A més a més, podem veure que els bitllets de viatge de tipus **B** costen al voltant de 80 USD, que és molt similar a la tarifa mitja o mitjana dels passatgers **S**.
 
 ```{r message= FALSE, warning=FALSE}
 
-# Calcul de la mitja i la mitjana de les cabines que comencen per 'B' (agrupat pels valors de la variable 'Embark')
-dataset[grep("*^B", dataset$Cabin),] %>% group_by(Embarked) %>% summarize_each(funs(mean),Fare)
-dataset[grep("*^B", dataset$Cabin),] %>% group_by(Embarked) %>% summarize_each(funs(median),Fare)
+# Busquem l'embarcament més repetit
+tail(names(sort(table(dataset$Embarked))), 1)
 
 ```
 
-Per tant, procedim a inputar els dos valors perduts de **Embarked** com a tipus **S**.
+Per tant, procedim a imputar els dos valors perduts de **Embarked** com a tipus **S**.
 
 ```{r message= FALSE, warning=FALSE}
 
