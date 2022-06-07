@@ -33,6 +33,8 @@ library(ggplot2)
 library(magrittr)
 library(dplyr)
 
+set.seed(251862714) 
+
 ```
 
 # Descripció i càrrega del dataset.
@@ -165,7 +167,7 @@ dataset$Cabin <- NULL
 
 ### Ajust de la variable 'Embarked'.
 
-Com hem vist anteriorment, hi ha dos valors de la variable **Embarked** que falten. Per trobar el valor d'aquestes dues observacions, procedim a verificar-ho buscant el tipus de embarcament més repetit .
+Com hem vist anteriorment, hi ha dos valors de la variable **Embarked** que falten. Per trobar el valor d'aquestes dues observacions, procedim a verificar-ho buscant el tipus de embarcament més repetit.
 
 
 ```{r message= FALSE, warning=FALSE}
@@ -330,7 +332,6 @@ A continuació, passem a comprovar la homogeneïtat de la variància o també co
 ```{r message= FALSE, warning=FALSE}
 
 # Realització del test i mostra dels resultats
-set.seed(1) 
 result <- var.test(Age ~ Survived, data = dataset)
 print(result)
 
@@ -376,6 +377,9 @@ A continuació, executem el test i mostrem els resultats.
 ANOVA_test <- aov(Age ~ Survived, data = dataset)
 summary(ANOVA_test)
 
+# Mostrem el p-valor
+summary(ANOVA_test)[[1]][["Pr(>F)"]][1]
+
 ```
 
 De manera similar al test anterior, en aquest, el **p-valor** és superior a 0.05. És a dir, amb un 95% de nivell de confiança podem confirmar/concloure que no hi ha diferencia entre les mitjanes de les dues poblacions. Això vol dir, que, en el fet de sobreviure o no, no va tenir un impacte gran l'edat de les persones que anaven a bord, com ja haviem esmentat anteriorment amb l'ajut del **t-test**.
@@ -394,7 +398,7 @@ summary(model)
 
 ```
 
-Com s'observa amb la interpretació del model aplicat podem verificar que les variables class, Sex són clarament significatives ja que ens ho indiquen amb el simbol ***, concretament Sex(male), Pclass(3) i Embarked(S) ja que el valor del Z-value és més gran que 2 ja sigui en positiu o en negatiu.
+Com s'observa amb la interpretació del model aplicat podem verificar que les variables **Pclass**, **Sex** són clarament significatives, concretament Sex(male) ja que el valor del Z-value és més gran que 2.
 
 # Conclusions.
 
@@ -406,7 +410,7 @@ Les conclusions que podem extreure amb els anàlisis realitzats són les següen
 
 - Aquesta mateixa conclusió també la corroborem amb la prova ANOVA (one-way analysis of variance) ja que el p-valor obté un resultat clarament superior a 0.05.
 
-- El model de regressió logístic lineal creat per predir la probabilitat que les diverses variables siguin significatives en quan a la supervivencia del naufragi, ens expliquen que el fet de ser home o dona i de pertanyer a una classe o a una altra va ser clarament significatiu en relació a la supervivència del Titanic ja que el p-valor de les variables **Sex** i **Pclass** són superior a 2 ja sigui en positiu o negatiu.
+- El model de regressió logístic lineal creat per predir la probabilitat que les diverses variables siguin significatives en quan a la supervivencia del naufragi, ens expliquen que el fet de ser home o dona va ser clarament significatiu en relació a la supervivència del Titanic ja que el p-valor de la variable **Sex** és superior a 2.
  
 # Contribucions.
 
